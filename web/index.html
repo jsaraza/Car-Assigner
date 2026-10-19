@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Family Cars</title>
+  <meta name="description" content="Who's driving who, planned the day before.">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Family Cars">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="top">
+      <div class="brand">🚗 Family Cars</div>
+      <button class="me-chip" id="me-chip" hidden></button>
+    </header>
+    <main id="view" aria-live="polite"></main>
+    <nav class="tabs" id="tabs" hidden>
+      <button data-tab="tomorrow">Tomorrow</button>
+      <button data-tab="week">Week</button>
+      <button data-tab="plans">My Plans</button>
+      <button data-tab="log">Changes</button>
+    </nav>
+  </div>
+  <div id="sheet" class="sheet" hidden></div>
+  <div id="toast" class="toast" hidden></div>
+
+  <!-- Shared planner code (copied from apps-script/ at build time) -->
+  <script src="lib/Util.js"></script>
+  <script src="lib/Schema.js"></script>
+  <script src="lib/Planner.js"></script>
+  <script src="lib/Sample.js"></script>
+  <script src="lib/Actions.js"></script>
+  <script src="demo.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
