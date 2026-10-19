@@ -50,7 +50,7 @@ test('state and assign go through the sheet', () => {
   assert.equal(state.now.date, '2026-10-19');
   assert.ok(state.days[1].deadlineMs > 0);
 
-  const res = google.call({ action: 'assign', by: 'me', itemKey: `${TUE}:school_am:brothers`, driver: 'mom', car: 'ev' });
+  const res = google.call({ action: 'assign', by: 'dad', itemKey: `${TUE}:school_am:brothers`, driver: 'mom', car: 'ev' });
   assert.equal(res.ok, true, res.error);
   const row = google.sheet('Assignments').rows[1];
   assert.equal(row[0], `${TUE}:school_am:brothers`);
@@ -61,14 +61,14 @@ test('state and assign go through the sheet', () => {
   assert.equal(again.days[0].rides.find((r) => r.type === 'school_am').driver, 'mom');
 
   // Changing it updates the same row instead of adding one.
-  google.call({ action: 'assign', by: 'me', itemKey: `${TUE}:school_am:brothers`, driver: 'mom', car: 'pathfinder' });
+  google.call({ action: 'assign', by: 'dad', itemKey: `${TUE}:school_am:brothers`, driver: 'mom', car: 'pathfinder' });
   assert.equal(google.sheet('Assignments').rows.length, 2);
 });
 
 test('5pm lock puts tomorrow on the calendar and invites the driver', () => {
   const google = ready();
   setEmail(google, 'mom', 'mom@example.com');
-  google.call({ action: 'applySuggestion', by: 'me', date: TUE });
+  google.call({ action: 'applySuggestion', by: 'dad', date: TUE });
 
   google.g.lockTomorrow();
   const cal = Object.values(google.calendars)[0];
@@ -87,13 +87,13 @@ test('a late change updates the calendar and emails old and new drivers', () => 
   const google = ready();
   setEmail(google, 'mom', 'mom@example.com');
   setEmail(google, 'me', 'me@example.com');
-  google.call({ action: 'assign', by: 'me', itemKey: `${TUE}:school_am:brothers`, driver: 'mom', car: 'pathfinder' });
+  google.call({ action: 'assign', by: 'dad', itemKey: `${TUE}:school_am:brothers`, driver: 'mom', car: 'pathfinder' });
   google.g.lockTomorrow();
   const cal = Object.values(google.calendars)[0];
   assert.equal(Object.values(cal.events)[0].opts.guests, 'mom@example.com');
 
   google.setNow(new Date('2026-10-19T21:30:00-04:00'));
-  const res = google.call({ action: 'assign', by: 'mom', itemKey: `${TUE}:school_am:brothers`, driver: 'me', car: 'lexus' });
+  const res = google.call({ action: 'assign', by: 'dad', itemKey: `${TUE}:school_am:brothers`, driver: 'me', car: 'lexus' });
   assert.equal(res.ok, true, res.error);
 
   const events = Object.values(cal.events);
@@ -109,15 +109,17 @@ test('a late change updates the calendar and emails old and new drivers', () => 
   assert.equal(google.sheet('Change Log').rows.at(-1).at(-1), 'LATE');
 });
 
-test('noon check emails drivers only when tomorrow has problems', () => {
+test('noon check emails the planner only when tomorrow has problems', () => {
   const google = ready();
   setEmail(google, 'dad', 'dad@example.com');
+  setEmail(google, 'me', 'me@example.com');
   google.g.noonCheck();
   assert.equal(google.mail.length, 1);
+  assert.equal(google.mail[0].to, 'dad@example.com');
   assert.match(google.mail[0].subject, /needs attention/);
   assert.match(google.mail[0].body, /has no driver yet/);
 
-  google.call({ action: 'applySuggestion', by: 'me', date: TUE });
+  google.call({ action: 'applySuggestion', by: 'dad', date: TUE });
   google.g.noonCheck();
   assert.equal(google.mail.length, 1, 'no email once tomorrow is covered');
 });

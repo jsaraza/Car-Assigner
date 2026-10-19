@@ -70,7 +70,7 @@ Fill these in on the sheet's tabs:
 |---|---|
 | **People** | Real names in `name` (keep the `id` column as is), and everyone's `email` for calendar invites. `commute_minutes` is how long Dad's and your sister's drive to work takes, one way. |
 | **Places** | Rough driving minutes from home to the brothers' school, Mom's work and the bus lot. |
-| **Settings** | `school_dropoff`: the real morning time. Check `school_pickup` (3:05pm = `15:05`). |
+| **Settings** | `planners`: who assigns drivers and cars (`dad`; add a backup like `dad, sister` if you want). `school_dropoff`: the real morning time. Check `school_pickup` (3:05pm = `15:05`). |
 | **Work Schedule** | One row per shift: `person` (`mom`, `dad` or `sister`), `date` (`2026-10-20`), `start` and `end` (24-hour, for example `08:00` and `16:30`). |
 | **School Exceptions** | Days with no school (`no_school` = `TRUE`), or a different `dropoff`/`pickup` time that day. |
 
@@ -80,8 +80,11 @@ Times are 24-hour (`15:05`), dates are `YYYY-MM-DD`, and lists like `can_drive` 
 
 ## Part 4: Phones
 
-**Everyone who plans** (you and your sister, and your parents if they ever want to look):
-open the family link on the phone, pick your name, then:
+**Dad (the planner)** assigns drivers and cars in the app, and gets the noon email if tomorrow isn't covered.
+**Everyone else** can see the plan and add their own busy times, bus-lot days and pickup requests,
+which is how Dad knows when someone can't drive. Dad can also add plans for Mom.
+
+To install it, open the family link on the phone, pick your name, then:
 
 - **iPhone (Safari):** Share button → **Add to Home Screen**
 - **Android (Chrome):** ⋮ menu → **Add to Home screen** or **Install app**
@@ -99,8 +102,8 @@ To see everyone's rides in one place, open Google Calendar on a computer, find *
 
 | When | What happens |
 |---|---|
-| Any time before 5pm the day before | Anyone can plan, change and use **Suggest a fix**. |
-| ~12:00pm the day before | If tomorrow still has problems, every driver gets an email. |
+| Any time before 5pm the day before | Everyone adds their plans; the planner assigns rides (or uses **Suggest a fix**). |
+| ~12:00pm the day before | If tomorrow still has problems, the planner gets an email. |
 | 5:00pm the day before | Tomorrow locks. Between 5:00 and 5:30, calendar invites go out to each driver. |
 | After 5pm | Changes still work, but they're marked **LATE**. The calendar updates right away and the people affected get an email saying who changed what. |
 

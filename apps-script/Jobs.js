@@ -1,7 +1,7 @@
 /*
  * Timed jobs, Google Calendar invites and emails. Apps Script only.
  *
- *   noonCheck     - around alert_time: email everyone if tomorrow has problems
+ *   noonCheck     - around alert_time: email the planner if tomorrow has problems
  *   lockTomorrow  - just after cutoff_time: put tomorrow's plan on the calendar
  *                   and invite each driver to their rides
  *   late changes  - after the cutoff, every change updates the calendar right
@@ -44,7 +44,7 @@ function noonCheck() {
   var issues = checkDay(data, buildDay(data, tomorrow)).filter(function (i) { return i.level === 'error'; });
   if (!issues.length) return;
   sendMail_(
-    emailsOf_(data, data.people.filter(isDriver).map(function (p) { return p.id; })),
+    emailsOf_(data, data.people.filter(function (p) { return isPlanner(data, p); }).map(function (p) { return p.id; })),
     'Car plan for ' + prettyDate_(tomorrow) + ' needs attention',
     "Tomorrow's car plan still has problems. It locks at " + formatTime12(data.settings.cutoff) + ' today.\n\n' +
       issues.map(function (i) { return '- ' + i.message; }).join('\n') +

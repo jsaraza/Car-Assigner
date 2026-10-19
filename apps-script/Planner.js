@@ -36,6 +36,7 @@ function normalizeData(tables) {
     schoolFirstDay: normalizeDate(raw.school_first_day),
     schoolLastDay: normalizeDate(raw.school_last_day),
     lotPlace: id(raw.bus_lot_place),
+    planners: splitList(raw.planners),
     evPreference: raw.ev_to_longest_commute === undefined || raw.ev_to_longest_commute === '' ||
       isTrue(raw.ev_to_longest_commute),
     calendarId: raw.calendar_id || '',
@@ -175,6 +176,21 @@ function placeName(data, pid) {
 
 function isDriver(person) {
   return !!person && person.active && person.canDrive.length > 0;
+}
+
+/**
+ * Planners decide who drives. With no planners set in Settings, every driver
+ * can plan.
+ */
+function isPlanner(data, person) {
+  if (!person || !person.active) return false;
+  if (!data.settings.planners.length) return isDriver(person);
+  return data.settings.planners.indexOf(person.id) >= 0;
+}
+
+/** People who use the app: drivers and planners. */
+function isMember(data, person) {
+  return isDriver(person) || isPlanner(data, person);
 }
 
 function planAppliesOn(plan, date) {

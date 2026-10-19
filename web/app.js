@@ -68,7 +68,7 @@
       S.loadedAt = Date.now();
       S.skew = res.now.ms - Date.now();
       S.error = null;
-      if (S.me && !driverById(S.me)) S.me = null;
+      if (S.me && !memberById(S.me)) S.me = null;
       render();
     }).catch(function (err) {
       S.error = err.message;
@@ -87,9 +87,17 @@
   function person(pid) {
     return (S.data.people || []).filter(function (p) { return p.id === pid; })[0] || null;
   }
-  function driverById(pid) {
+  function memberById(pid) {
     var p = S.data && person(pid);
-    return p && p.isDriver ? p : null;
+    return p && p.isMember ? p : null;
+  }
+  function amPlanner() {
+    var p = memberById(S.me);
+    return !!(p && p.isPlanner);
+  }
+  function plannerNames() {
+    var names = S.data.people.filter(function (p) { return p.isPlanner; }).map(function (p) { return p.name; });
+    return names.length ? names.join(' or ') : 'the planner';
   }
   function nameOf(pid) { var p = person(pid); return p ? p.name : pid; }
   function car(cid) { return (S.data.cars || []).filter(function (c) { return c.id === cid; })[0] || null; }
@@ -176,7 +184,7 @@
     }
 
     chip.hidden = false;
-    chip.textContent = nameOf(S.me) + ' ▾';
+    chip.textContent = nameOf(S.me) + (amPlanner() ? ' · Planner' : '') + ' ▾';
     tabs.hidden = false;
     Array.prototype.forEach.call(tabs.querySelectorAll('button'), function (b) {
       b.classList.toggle('active', b.getAttribute('data-tab') === S.tab);
@@ -208,8 +216,9 @@
   }
 
   function pickHtml() {
-    var buttons = S.data.people.filter(function (p) { return p.isDriver; }).map(function (p) {
-      return '<button class="btn" data-act="pick" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>';
+    var buttons = S.data.people.filter(function (p) { return p.isMember; }).map(function (p) {
+      return '<button class="btn" data-act="pick" data-id="' + esc(p.id) + '">' + esc(p.name) +
+        (p.isPlanner ? ' <span class="muted small">· planner</span>' : '') + '</button>';
     }).join('');
     return '<div class="card"><h2>Who are you?</h2><p class="muted">Pick your name. You can change it later.</p>' +
       '<div class="people">' + buttons + '</div></div>';
@@ -267,8 +276,11 @@
     } else {
       html += '<div class="all-good">✓ Everything is covered.</div>';
     }
-    if (day.hasErrors) {
+    if (day.hasErrors && amPlanner()) {
       html += '<button class="btn block" data-act="suggest" data-date="' + day.date + '">Suggest a fix</button>';
+    } else if (day.hasErrors && day.date >= today()) {
+      html += '<p class="muted small">' + esc(plannerNames()) + ' assigns the rides. If you can\'t drive at some time, ' +
+        'add it in My Plans so they know.</p>';
     }
     return html + '</section>';
   }
@@ -340,6 +352,20 @@
     if (!it) return;
     var html = '<h2>' + esc(it.label) + '</h2><p class="muted">' + esc(relDay(date)) + ' · ' +
       esc(fmtRange(it.start, it.end)) + '</p>';
+    var issues = day.issues.filter(function (i) { return i.keys.indexOf(key) >= 0; });
+    var issuesHtml = issues.length ? '<ul class="issues">' + issues.map(function (i) {
+      return '<li class="' + i.level + '">' + esc(i.message) + '</li>';
+    }).join('') + '</ul>' : '';
+
+    if (!amPlanner()) {
+      html += '<p><strong>Driver:</strong> ' + esc(it.driver ? nameOf(it.driver) : 'not assigned yet') + '<br>' +
+        '<strong>Car:</strong> ' + esc(it.car ? carNameOf(it.car) : 'not picked yet') + '</p>' + issuesHtml +
+        '<p class="muted small">Only ' + esc(plannerNames()) + ' can change who drives. ' +
+        'Busy then? Add it in My Plans and they\'ll see it.</p>' +
+        '<button class="btn block" data-act="close">Close</button>';
+      openSheet(html);
+      return;
+    }
 
     if (it.kind === 'ride') {
       html += '<label for="ed-driver">Driver</label><select id="ed-driver"><option value="">Nobody yet</option>' +
@@ -351,12 +377,7 @@
     }
     html += '<label for="ed-car">Car</label><select id="ed-car"></select>';
 
-    var issues = day.issues.filter(function (i) { return i.keys.indexOf(key) >= 0; });
-    if (issues.length) {
-      html += '<ul class="issues">' + issues.map(function (i) {
-        return '<li class="' + i.level + '">' + esc(i.message) + '</li>';
-      }).join('') + '</ul>';
-    }
+    html += issuesHtml;
     if (day.late) {
       html += '<div class="banner">This day is locked. Saving now is a <strong>late change</strong>: ' +
         'the people affected get an email and the calendar updates right away.</div>';
@@ -446,8 +467,14 @@
   function plansHtml() {
     var tomorrow = addDays(today(), 1);
     var places = S.data.places.filter(function (p) { return p.id !== 'home'; });
+    var planner = amPlanner();
     var html = '<div class="card"><h2>Add a plan</h2>' +
       '<p class="muted small">Block time you\'re not available, a day you take the car to the bus lot, or ask for a pickup.</p>' +
+      (planner ? '<label for="pl-person">For</label><select id="pl-person">' +
+        S.data.people.filter(function (p) { return p.isMember; }).map(function (p) {
+          return '<option value="' + esc(p.id) + '"' + (p.id === S.me ? ' selected' : '') + '>' +
+            esc(p.id === S.me ? p.name + ' (me)' : p.name) + '</option>';
+        }).join('') + '</select>' : '') +
       '<label for="pl-type">What</label><select id="pl-type">' +
       Object.keys(PLAN_TYPES).map(function (k) { return '<option value="' + k + '">' + esc(PLAN_TYPES[k]) + '</option>'; }).join('') +
       '</select>' +
@@ -468,10 +495,10 @@
 
     var mine = S.data.plans.filter(function (p) {
       var last = p.days.length ? (p.until || '9999-12-31') : p.date;
-      return p.person === S.me && last >= today();
+      return (planner || p.person === S.me) && last >= today();
     }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-    html += '<div class="card"><h2>My plans</h2>' + (mine.length ? mine.map(function (p) {
-      return '<div class="plan"><div><strong>' + esc(PLAN_TYPES[p.type]) + '</strong>' +
+    html += '<div class="card"><h2>' + (planner ? 'Everyone\'s plans' : 'My plans') + '</h2>' + (mine.length ? mine.map(function (p) {
+      return '<div class="plan"><div><strong>' + (planner ? esc(nameOf(p.person)) + ': ' : '') + esc(PLAN_TYPES[p.type]) + '</strong>' +
         (p.note ? ' · ' + esc(p.note) : '') + '<div class="muted small">' + esc(planWhen(p)) + '</div></div>' +
         '<button class="btn danger" data-act="del-plan" data-id="' + esc(p.id) + '">Remove</button></div>';
     }).join('') : '<p class="muted">No plans yet.</p>') + '</div>';
@@ -512,6 +539,7 @@
   function addPlan(btn) {
     var days = Array.prototype.map.call(document.querySelectorAll('input[name="pl-day"]:checked'), function (c) { return c.value; });
     var plan = {
+      person: $('#pl-person') ? $('#pl-person').value : S.me,
       type: $('#pl-type').value,
       date: $('#pl-date').value,
       start: $('#pl-start').value,

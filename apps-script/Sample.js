@@ -31,6 +31,7 @@ function sampleTables(today) {
 
   return {
     settings: [
+      { key: 'planners', value: 'dad', notes: 'Who assigns drivers and cars (People ids, comma-separated). Empty = every driver can.' },
       { key: 'cutoff_time', value: '17:00', notes: "Tomorrow's plan locks at this time. Changes after it are LATE." },
       { key: 'alert_time', value: '12:00', notes: 'Midday email if tomorrow still has problems.' },
       { key: 'school_dropoff', value: '07:30', notes: 'PLACEHOLDER - set the real morning drop-off time.' },

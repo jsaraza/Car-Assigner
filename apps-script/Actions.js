@@ -35,7 +35,10 @@ function actState(req, env, data) {
     now: env.now,
     settings: { cutoff: data.settings.cutoff, alert: data.settings.alert, lotPlace: data.settings.lotPlace },
     people: data.people.filter(function (p) { return p.active; }).map(function (p) {
-      return { id: p.id, name: p.name, canDrive: p.canDrive, isDriver: isDriver(p) };
+      return {
+        id: p.id, name: p.name, canDrive: p.canDrive,
+        isDriver: isDriver(p), isPlanner: isPlanner(data, p), isMember: isMember(data, p)
+      };
     }),
     cars: data.cars.map(function (c) { return { id: c.id, name: c.name, isEv: c.isEv }; }),
     places: Object.keys(data.places).map(function (k) { return data.places[k]; }),
@@ -45,7 +48,7 @@ function actState(req, env, data) {
 }
 
 function actAssign(req, env, data) {
-  var by = requireDriver(data, req.by);
+  var by = requirePlanner(data, req.by);
   var key = String(req.itemKey || '');
   var date = normalizeDate(key.slice(0, 10));
   if (!date) throw new Error('Missing ride.');
@@ -73,7 +76,7 @@ function actSuggest(req, env, data) {
 }
 
 function actApplySuggestion(req, env, data) {
-  var by = requireDriver(data, req.by);
+  var by = requirePlanner(data, req.by);
   var date = normalizeDate(req.date);
   if (!date) throw new Error('Missing date.');
   var day = buildDay(data, date);
@@ -89,7 +92,7 @@ function actApplySuggestion(req, env, data) {
 }
 
 function actAddPlan(req, env, data) {
-  var by = requireDriver(data, req.by);
+  var by = requireMember(data, req.by);
   var p = req.plan || {};
   var type = id(p.type);
   if (!PLAN_TYPES[type]) throw new Error('Pick what kind of plan this is.');
@@ -108,9 +111,16 @@ function actAddPlan(req, env, data) {
   var until = normalizeDate(p.until);
   if (until && until < date) throw new Error('"Until" has to be after the start date.');
 
+  var forPerson = by;
+  if (p.person && id(p.person) !== by.id) {
+    if (!isPlanner(data, by)) throw new Error('You can only add plans for yourself.');
+    forPerson = personById(data, id(p.person));
+    if (!forPerson || !forPerson.active) throw new Error('Unknown person.');
+  }
+
   var row = {
     id: 'p' + env.now.ms.toString(36) + Math.floor(Math.random() * 1296).toString(36),
-    person: by.id,
+    person: forPerson.id,
     type: type,
     date: date,
     start: start == null ? '' : fromMinutes(start),
@@ -127,11 +137,11 @@ function actAddPlan(req, env, data) {
 }
 
 function actDeletePlan(req, env, data) {
-  var by = requireDriver(data, req.by);
+  var by = requireMember(data, req.by);
   var plan = null;
   data.plans.forEach(function (p) { if (p.id === String(req.id)) plan = p; });
   if (!plan) throw new Error('That plan was already removed.');
-  if (plan.person !== by.id) throw new Error('You can only remove your own plans.');
+  if (plan.person !== by.id && !isPlanner(data, by)) throw new Error('You can only remove your own plans.');
   env.store.deletePlan(plan.id);
   recordPlanChange(data, env, by, plan, 'Removed', planSummary(data, plan), '');
   return { ok: true };
@@ -143,10 +153,21 @@ function actLog(req, env) {
 
 // ---------------------------------------------------------------------------
 
-function requireDriver(data, by) {
+function requireMember(data, by) {
   var p = personById(data, id(by));
-  if (!isDriver(p)) throw new Error('Pick your name first.');
+  if (!isMember(data, p)) throw new Error('Pick your name first.');
   return p;
+}
+
+function requirePlanner(data, by) {
+  var p = requireMember(data, by);
+  if (!isPlanner(data, p)) throw new Error('Only ' + plannerNames(data) + ' can change who drives.');
+  return p;
+}
+
+function plannerNames(data) {
+  var names = data.people.filter(function (p) { return isPlanner(data, p); }).map(function (p) { return p.name; });
+  return names.length ? names.join(' or ') : 'the planner';
 }
 
 function isLateNow(data, env, date) {
@@ -196,7 +217,8 @@ function recordPlanChange(data, env, by, plan, verb, before, after) {
     return planAppliesOn(plan, d) && isLateNow(data, env, d);
   });
   env.store.appendLog({
-    when: stamp(env), by: by.name, date: plan.date, what: verb + ' plan: ' + PLAN_TYPES[plan.type],
+    when: stamp(env), by: by.name, date: plan.date,
+    what: verb + ' plan: ' + PLAN_TYPES[plan.type] + (plan.person !== by.id ? ' for ' + personName(data, plan.person) : ''),
     from: before, to: after, late: lateDates.length ? 'LATE' : ''
   });
   if (lateDates.length) {
@@ -204,7 +226,7 @@ function recordPlanChange(data, env, by, plan, verb, before, after) {
       dates: lateDates,
       by: by.id,
       notifyAll: true,
-      changes: [{ label: by.name + ' - ' + PLAN_TYPES[plan.type], before: before || '(none)', after: after || '(removed)', late: true, people: [] }]
+      changes: [{ label: personName(data, plan.person) + ' - ' + PLAN_TYPES[plan.type], before: before || '(none)', after: after || '(removed)', late: true, people: [] }]
     });
   }
 }

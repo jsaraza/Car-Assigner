@@ -6,13 +6,15 @@ A free planner for a family that shares three cars. It answers "who's driving wh
 - **Planner:** works out each day's rides from the work schedules and the school calendar (brothers to
   school and back, Mom to and from work, pickup requests), plus who keeps a car all day (commuters,
   bus-lot days).
+- **Planner role:** one person (set in the Sheet; Dad by default) assigns drivers and cars. Everyone
+  else sees the plan and adds their own busy times, bus-lot days and pickup requests.
 - **Rules:** who can drive which car, nobody in two places at once, no car double-booked, nobody
   assigned during their busy time. Preferences: the EV goes to the longest commute, and driving is
   spread around.
 - **Suggest a fix:** fills in a day so every ride is covered, keeping choices people already made
   when possible. For example, if Dad and Sister both work, it gives Dad the Pathfinder so the Lexus
   stays home for whoever drives Mom.
-- **Deadline:** an email at noon if tomorrow has problems, a lock at 5pm with Google Calendar
+- **Deadline:** an email to the planner at noon if tomorrow has problems, a lock at 5pm with Google Calendar
   invites for each driver, and every change after that is marked **LATE** and emailed to the people
   it affects.
 
