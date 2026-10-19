@@ -284,3 +284,23 @@ input, select, textarea {
 }
 
 .center { text-align: center; padding: 40px 0; color: var(--muted); }
+
+.notif {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.notif-head { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.steps { padding-left: 20px; margin: 8px 0; }
+.steps li { margin: 4px 0; }
+.topic {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding: 8px 0;
+}
+.topic code { font-size: 14px; word-break: break-all; }

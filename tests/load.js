@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const SHARED = ['Util.js', 'Schema.js', 'Planner.js', 'Sample.js', 'Actions.js'];
+const SHARED = ['Util.js', 'Schema.js', 'Planner.js', 'Notify.js', 'Sample.js', 'Actions.js'];
 
 function loadShared() {
   const ctx = vm.createContext({ console });

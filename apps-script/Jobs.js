@@ -178,3 +178,27 @@ function familyLinkUrl_(data) {
   return data.settings.appUrl.replace(/\/?$/, '/') + '?api=' + encodeURIComponent(data.settings.apiUrl) +
     '&key=' + encodeURIComponent(key);
 }
+
+/** Pushes notifications to people's phones (ntfy app). Returns the ones sent. */
+function sendNotifications_(list, data) {
+  data = data || loadSheetData_();
+  var server = data.settings.notifyServer.replace(/\/+$/, '');
+  var sent = [];
+  list.forEach(function (n) {
+    var p = personById(data, n.person);
+    if (!p || !p.notifyTopic) return;
+    try {
+      var res = UrlFetchApp.fetch(server + '/', {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify({ topic: p.notifyTopic, title: 'Family Cars', message: n.lines.join('\n'), tags: ['red_car'] }),
+        muteHttpExceptions: true
+      });
+      if (res.getResponseCode() < 300) sent.push(n);
+      else console.error('Notification to ' + p.id + ' failed: ' + res.getResponseCode() + ' ' + res.getContentText());
+    } catch (err) {
+      console.error('Notification to ' + p.id + ' failed: ' + err);
+    }
+  });
+  return sent;
+}

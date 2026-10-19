@@ -1,6 +1,6 @@
 // Keeps the app shell available offline. Always tries the network first so
 // updates show up right away; the backend (another origin) is never cached.
-var CACHE = 'family-cars-v1';
+var CACHE = 'family-cars-v2';
 var SHELL = [
   './',
   'index.html',
@@ -10,6 +10,7 @@ var SHELL = [
   'lib/Util.js',
   'lib/Schema.js',
   'lib/Planner.js',
+  'lib/Notify.js',
   'lib/Sample.js',
   'lib/Actions.js',
   'manifest.webmanifest',

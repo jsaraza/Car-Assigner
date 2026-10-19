@@ -13,7 +13,10 @@ function setup() {
     var sheet = ss.getSheetByName(def.sheet) || ss.insertSheet(def.sheet);
     sheet.getRange(1, 1, sheet.getMaxRows(), Math.max(def.headers.length, sheet.getMaxColumns()))
       .setNumberFormat('@');
-    if (sheet.getLastRow() > 0) return;
+    if (sheet.getLastRow() > 0) {
+      addMissingColumns_(sheet, def.headers);
+      return;
+    }
     sheet.getRange(1, 1, 1, def.headers.length).setValues([def.headers]).setFontWeight('bold');
     sheet.setFrozenRows(1);
     var rows = (sample[k] || []).map(function (r) {
@@ -28,6 +31,8 @@ function setup() {
 
   var props = PropertiesService.getScriptProperties();
   if (!props.getProperty('FAMILY_KEY')) props.setProperty('FAMILY_KEY', newKey_());
+
+  fillNotifyTopics_();
 
   var data = loadSheetData_();
   if (!data.settings.calendarId) {
@@ -64,4 +69,25 @@ function removeSampleData() {
 
 function newKey_() {
   return Utilities.getUuid().replace(/-/g, '').slice(0, 20);
+}
+
+/** Gives everyone without one a private notification channel name (an ntfy topic). */
+function fillNotifyTopics_() {
+  readTable_('people').forEach(function (r) {
+    if (String(r.id || '').trim() && !String(r.notify_topic || '').trim()) {
+      updateRow_('people', 'id', r.id, { notify_topic: 'familycars-' + newKey_().slice(0, 16) });
+    }
+  });
+}
+
+/** Older sheets: add any columns that newer versions of the app use. */
+function addMissingColumns_(sheet, headers) {
+  var have = headersOf_(sheet);
+  headers.forEach(function (h) {
+    if (have.indexOf(h) >= 0) return;
+    var col = sheet.getLastColumn() + 1;
+    sheet.getRange(1, col).setValue(h);
+    sheet.getRange(1, col).setFontWeight('bold');
+    have.push(h);
+  });
 }

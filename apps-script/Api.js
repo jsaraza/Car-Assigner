@@ -55,7 +55,8 @@ function appsEnv_() {
       if (cutoff == null) cutoff = normalizeData({ settings: readTable_('settings') }).settings.cutoff;
       return toDate_(addDays(date, -1), cutoff).getTime();
     },
-    onLate: handleLateChange_
+    onLate: handleLateChange_,
+    notify: sendNotifications_
   };
 }
 

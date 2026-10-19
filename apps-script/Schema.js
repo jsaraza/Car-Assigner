@@ -11,7 +11,7 @@ var TABLES = {
   people: {
     sheet: 'People',
     headers: ['id', 'name', 'phone', 'email', 'can_drive', 'drives_self_to_work',
-      'gets_rides_to_work', 'work_place', 'commute_minutes', 'active']
+      'gets_rides_to_work', 'work_place', 'commute_minutes', 'helper', 'notify_topic', 'active']
   },
   cars: {
     sheet: 'Cars',

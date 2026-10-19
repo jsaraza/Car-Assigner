@@ -38,7 +38,8 @@ var DemoApi = (function () {
         var p = addDays(date, -1).split('-');
         return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), Math.floor(cutoff / 60), cutoff % 60).getTime();
       },
-      onLate: function () { /* the real app emails and updates the calendar here */ }
+      onLate: function () { /* the real app emails and updates the calendar here */ },
+      notify: function (list) { return list; } // the real app pushes these to phones
     };
   }
 

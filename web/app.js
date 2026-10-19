@@ -372,7 +372,7 @@
         S.data.people.filter(function (p) { return p.isDriver && p.id !== it.rider; }).map(function (p) {
           var free = !it.available || it.available.indexOf(p.id) >= 0;
           return '<option value="' + esc(p.id) + '"' + (p.id === it.driver ? ' selected' : '') + '>' +
-            esc(p.name) + (free ? '' : ' (busy)') + '</option>';
+            esc(p.name) + (p.isHelper ? ' (helper)' : '') + (free ? '' : ' (busy)') + '</option>';
         }).join('') + '</select>';
     }
     html += '<label for="ed-car">Car</label><select id="ed-car"></select>';
@@ -412,9 +412,24 @@
     var day = dayOf(date);
     busy(true);
     call('assign', payload).then(function (res) {
-      toast(!res.changed ? 'No change.' : day && day.late ? 'Saved. Late change: the people affected were notified.' : 'Saved.');
-      return load();
+      var msg = !res.changed ? 'No change.' : day && day.late ? 'Saved. Late change: the people affected were emailed.' : 'Saved.';
+      return load().then(function () { afterSave(msg, res.notified); });
     }).catch(function (err) { toast(err.message); busy(false); });
+  }
+
+  /** Toast after a save; in the demo, also show the notifications that would go to phones. */
+  function afterSave(msg, notified) {
+    notified = notified || [];
+    var names = notified.map(function (n) { return n.name; });
+    if (S.mode !== 'demo' || !notified.length) {
+      toast(names.length ? msg + ' Notified ' + names.join(', ') + '.' : msg);
+      return;
+    }
+    openSheet('<h2>Notifications sent</h2><p class="muted small">In the real app these pop up on each person\'s phone.</p>' +
+      notified.map(function (n) {
+        return '<div class="notif"><div class="notif-head">🚗 Family Cars · to ' + esc(n.name) + '</div>' +
+          n.lines.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('') + '</div>';
+      }).join('') + '<button class="btn block" data-act="close">OK</button>');
   }
 
   function busy(on) {
@@ -451,8 +466,8 @@
   function applySuggestion(date) {
     busy(true);
     call('applySuggestion', { date: date }).then(function (res) {
-      toast('Applied ' + res.applied + ' change' + (res.applied === 1 ? '' : 's') + '.');
-      return load();
+      var msg = 'Applied ' + res.applied + ' change' + (res.applied === 1 ? '' : 's') + '.';
+      return load().then(function () { afterSave(msg, res.notified); });
     }).catch(function (err) { toast(err.message); busy(false); });
   }
 
@@ -468,7 +483,7 @@
     var tomorrow = addDays(today(), 1);
     var places = S.data.places.filter(function (p) { return p.id !== 'home'; });
     var planner = amPlanner();
-    var html = '<div class="card"><h2>Add a plan</h2>' +
+    var html = notifyCardHtml() + '<div class="card"><h2>Add a plan</h2>' +
       '<p class="muted small">Block time you\'re not available, a day you take the car to the bus lot, or ask for a pickup.</p>' +
       (planner ? '<label for="pl-person">For</label><select id="pl-person">' +
         S.data.people.filter(function (p) { return p.isMember; }).map(function (p) {
@@ -503,6 +518,36 @@
         '<button class="btn danger" data-act="del-plan" data-id="' + esc(p.id) + '">Remove</button></div>';
     }).join('') : '<p class="muted">No plans yet.</p>') + '</div>';
     return html;
+  }
+
+  function notifyCardHtml() {
+    var me = person(S.me);
+    var steps = '<ol class="small steps"><li>Install the free <strong>ntfy</strong> app ' +
+      '(<a href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank" rel="noopener">iPhone</a> · ' +
+      '<a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener">Android</a>).</li>' +
+      '<li>Tap <strong>+</strong> and subscribe to the channel below.</li></ol>';
+    var html = '<div class="card"><h2>Phone notifications</h2>' +
+      '<p class="muted small">Get a notification when you\'re assigned to drive, or when someone is dropping you off or picking you up.</p>';
+    if (S.mode === 'demo') {
+      return html + steps + '<p class="muted small">In the demo, saving a ride shows the notifications instead of sending them.</p></div>';
+    }
+    if (!me || !me.notifyTopic) {
+      return html + '<p class="muted small">Notifications aren\'t set up yet. Run setup() in the Apps Script editor once more.</p></div>';
+    }
+    html += steps + topicRow(me.name + ' (you)', me.notifyTopic);
+    if (amPlanner()) {
+      var others = S.data.people.filter(function (p) { return p.id !== S.me && p.notifyTopic; });
+      if (others.length) {
+        html += '<p class="muted small" style="margin-top:12px">Everyone else\'s channel, for setting up their phones:</p>' +
+          others.map(function (p) { return topicRow(p.name, p.notifyTopic); }).join('');
+      }
+    }
+    return html + '</div>';
+  }
+
+  function topicRow(label, topic) {
+    return '<div class="topic"><div><div class="small muted">' + esc(label) + '</div><code>' + esc(topic) + '</code></div>' +
+      '<button class="btn" data-act="copy" data-text="' + esc(topic) + '">Copy</button></div>';
   }
 
   function planWhen(p) {
@@ -668,6 +713,13 @@
       case 'add-plan':
         addPlan(el);
         return;
+      case 'copy': {
+        var text = el.getAttribute('data-text');
+        var done = function () { toast('Copied.'); };
+        if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { prompt('Copy this:', text); });
+        else prompt('Copy this:', text);
+        return;
+      }
       case 'del-plan':
         deletePlan(el.getAttribute('data-id'), el);
         return;

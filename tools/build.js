@@ -8,7 +8,7 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const out = path.join(root, 'dist', 'web');
-const SHARED = ['Util.js', 'Schema.js', 'Planner.js', 'Sample.js', 'Actions.js'];
+const SHARED = ['Util.js', 'Schema.js', 'Planner.js', 'Notify.js', 'Sample.js', 'Actions.js'];
 const BACKEND = SHARED.concat(['Store.js', 'Api.js', 'Jobs.js', 'Setup.js']);
 
 fs.rmSync(out, { recursive: true, force: true });

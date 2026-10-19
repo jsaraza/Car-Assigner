@@ -68,7 +68,8 @@ Fill these in on the sheet's tabs:
 
 | Tab | What to do |
 |---|---|
-| **People** | Real names in `name` (keep the `id` column as is), and everyone's `email` for calendar invites. `commute_minutes` is how long Dad's and your sister's drive to work takes, one way. |
+| **People** | Real names in `name` (keep the `id` column as is), and everyone's `email` for calendar invites. `commute_minutes` is how long Dad's and your sister's drive to work takes, one way. The **Mama and Papa** row is for the grandparents: `helper` = `TRUE` means the planner can assign them, but the app never suggests them and they don't use the app. Add more helpers the same way. |
+| **Cars** | `Mama and Papa's car` is the grandparents' own car, so their rides don't take a family car. |
 | **Places** | Rough driving minutes from home to the brothers' school, Mom's work and the bus lot. |
 | **Settings** | `planners`: who assigns drivers and cars (`dad`; add a backup like `dad, sister` if you want). `school_dropoff`: the real morning time. Check `school_pickup` (3:05pm = `15:05`). |
 | **Work Schedule** | One row per shift: `person` (`mom`, `dad` or `sister`), `date` (`2026-10-20`), `start` and `end` (24-hour, for example `08:00` and `16:30`). |
@@ -79,6 +80,28 @@ When the real schedules are in, run **removeSampleData** to delete the made-up s
 Times are 24-hour (`15:05`), dates are `YYYY-MM-DD`, and lists like `can_drive` are separated by commas (`ev, lexus`).
 
 ## Part 4: Phones
+
+### Notifications (everyone, including the brothers and grandparents)
+
+When the planner assigns a ride, the people involved get a notification right away, for example:
+
+- the driver: "You're driving Brothers to school tomorrow (Lexus). Leave by 7:20am, be there by 7:30am."
+- the person being driven: "Jim is dropping you off at school tomorrow at 7:30am."
+- a pickup: "Mama and Papa are picking you up from school tomorrow at 3:05pm."
+- anyone taken off a ride: "You're no longer driving: Brothers to school tomorrow."
+
+These come through **ntfy**, a free notification app. No account is needed. On each phone:
+
+1. Install **ntfy** ([iPhone](https://apps.apple.com/app/ntfy/id1625396347) · [Android](https://play.google.com/store/apps/details?id=io.heckel.ntfy)).
+2. Tap **+**, type that person's channel name, and tap **Subscribe**.
+   Each person's channel is in the `notify_topic` column of the **People** tab (setup makes them).
+   The app also shows your own channel under **My Plans**, and the planner sees everyone's.
+   Both brothers can subscribe to the same Brothers channel.
+   On Android, if notifications stop arriving after a while, open ntfy's settings and allow it to run in the background (turn off battery optimization).
+
+The channel names work like passwords: anyone who knows one can read those notifications. Keep them in the family.
+
+### The app
 
 **Dad (the planner)** assigns drivers and cars in the app, and gets the noon email if tomorrow isn't covered.
 **Everyone else** can see the plan and add their own busy times, bus-lot days and pickup requests,

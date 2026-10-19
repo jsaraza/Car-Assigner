@@ -66,6 +66,8 @@ function createGoogle(now) {
   const calendars = {};
   const mail = [];
   const triggers = [];
+  const fetched = [];
+  let uuid = 0;
   let clock = now;
 
   const ss = {
@@ -122,13 +124,19 @@ function createGoogle(now) {
         const [d, t] = s.split(' ');
         return new Date(d + 'T' + t + ':00-04:00');
       },
-      getUuid: () => '0123456789abcdef0123456789abcdef'
+      getUuid: () => (++uuid).toString(16).padStart(8, '0') + '-0123-4567-89ab-cdef01234567'
     },
     CalendarApp: {
       createCalendar: (name) => { const c = makeCalendar('cal-' + name); calendars[c.getId()] = c; return c; },
       getCalendarById: (calId) => calendars[calId] || null
     },
     MailApp: { sendEmail: (m) => mail.push(m) },
+    UrlFetchApp: {
+      fetch: (url, opts) => {
+        fetched.push({ url, opts, body: JSON.parse(opts.payload) });
+        return { getResponseCode: () => 200, getContentText: () => '{}' };
+      }
+    },
     ContentService: {
       MimeType: { JSON: 'json' },
       createTextOutput: (text) => ({ text, setMimeType() { return this; } })
@@ -161,7 +169,7 @@ function createGoogle(now) {
 
   const post = (body) => JSON.parse(ctx.doPost({ postData: { contents: JSON.stringify(body) } }).text);
   return {
-    g: ctx, ss, props, calendars, mail, triggers, post,
+    g: ctx, ss, props, calendars, mail, triggers, fetched, post,
     setNow: (d) => { clock = d; },
     sheet: (n) => ss.getSheetByName(n)
   };

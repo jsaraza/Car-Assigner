@@ -1,7 +1,7 @@
 /*
  * Small shared helpers.
  *
- * Everything in Util.js, Schema.js, Planner.js, Sample.js and Actions.js is
+ * Everything in Util.js, Schema.js, Planner.js, Notify.js, Sample.js and Actions.js is
  * plain global functions (no modules) so the same files run in Google Apps
  * Script, in the browser demo, and in the Node tests.
  *

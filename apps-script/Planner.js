@@ -36,6 +36,7 @@ function normalizeData(tables) {
     schoolFirstDay: normalizeDate(raw.school_first_day),
     schoolLastDay: normalizeDate(raw.school_last_day),
     lotPlace: id(raw.bus_lot_place),
+    notifyServer: raw.notify_server || 'https://ntfy.sh',
     planners: splitList(raw.planners),
     evPreference: raw.ev_to_longest_commute === undefined || raw.ev_to_longest_commute === '' ||
       isTrue(raw.ev_to_longest_commute),
@@ -55,6 +56,8 @@ function normalizeData(tables) {
       getsRides: isTrue(r.gets_rides_to_work),
       workPlace: id(r.work_place),
       commute: Number(r.commute_minutes) || 0,
+      helper: isTrue(r.helper),
+      notifyTopic: String(r.notify_topic || '').trim(),
       active: String(r.active == null ? '' : r.active).trim() === '' || isTrue(r.active)
     };
   });
@@ -184,13 +187,16 @@ function isDriver(person) {
  */
 function isPlanner(data, person) {
   if (!person || !person.active) return false;
-  if (!data.settings.planners.length) return isDriver(person);
+  if (!data.settings.planners.length) return isDriver(person) && !person.helper;
   return data.settings.planners.indexOf(person.id) >= 0;
 }
 
-/** People who use the app: drivers and planners. */
+/**
+ * People who use the app: family drivers and planners. Helpers (like
+ * grandparents with their own car) can be assigned rides but don't use it.
+ */
 function isMember(data, person) {
-  return isDriver(person) || isPlanner(data, person);
+  return (isDriver(person) && !person.helper) || isPlanner(data, person);
 }
 
 function planAppliesOn(plan, date) {
@@ -451,7 +457,8 @@ var SEARCH_BUDGET = 200000;
  */
 function suggestDay(data, day) {
   var items = day.holds.concat(day.rides);
-  var drivers = data.people.filter(isDriver);
+  // Helpers only drive when the planner asks them, so they're never suggested.
+  var drivers = data.people.filter(function (p) { return isDriver(p) && !p.helper; });
   var target = evTarget(data, day);
 
   var options = items.map(function (it) {

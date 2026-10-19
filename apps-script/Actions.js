@@ -7,6 +7,7 @@
  *   now:        { date: 'YYYY-MM-DD', minutes, ms },
  *   deadlineMs: function (date) -> epoch ms when that day's plan locks,
  *   onLate:     function ({ dates, by, changes, notifyAll }) -> void
+ *   notify:     function ([{ person, name, lines }], data) -> the ones sent (optional)
  * }
  */
 
@@ -26,6 +27,8 @@ function runAction(req, env) {
 }
 
 function actState(req, env, data) {
+  var viewer = personById(data, id(req.by));
+  var seesTopics = function (p) { return viewer && (viewer.id === p.id || isPlanner(data, viewer)); };
   var from = normalizeDate(req.from) || env.now.date;
   var count = Math.max(1, Math.min(31, Number(req.days) || 8));
   var days = planDays(data, from, count, env.now);
@@ -33,11 +36,15 @@ function actState(req, env, data) {
   return {
     ok: true,
     now: env.now,
-    settings: { cutoff: data.settings.cutoff, alert: data.settings.alert, lotPlace: data.settings.lotPlace },
+    settings: {
+      cutoff: data.settings.cutoff, alert: data.settings.alert, lotPlace: data.settings.lotPlace,
+      notifyServer: data.settings.notifyServer
+    },
     people: data.people.filter(function (p) { return p.active; }).map(function (p) {
       return {
         id: p.id, name: p.name, canDrive: p.canDrive,
-        isDriver: isDriver(p), isPlanner: isPlanner(data, p), isMember: isMember(data, p)
+        isDriver: isDriver(p), isPlanner: isPlanner(data, p), isMember: isMember(data, p), isHelper: p.helper,
+        notifyTopic: seesTopics(p) ? p.notifyTopic : undefined
       };
     }),
     cars: data.cars.map(function (c) { return { id: c.id, name: c.name, isEv: c.isEv }; }),
@@ -66,7 +73,7 @@ function actAssign(req, env, data) {
 
   var change = writeChoice(data, env, by, item, driver, car);
   if (change && change.late) env.onLate({ dates: [date], by: by.id, changes: [change] });
-  return { ok: true, changed: !!change };
+  return { ok: true, changed: !!change, notified: notifyChanges(data, env, change ? [change] : []) };
 }
 
 function actSuggest(req, env, data) {
@@ -88,7 +95,10 @@ function actApplySuggestion(req, env, data) {
   });
   var late = changes.filter(function (c) { return c.late; });
   if (late.length) env.onLate({ dates: [date], by: by.id, changes: late });
-  return { ok: true, applied: changes.length, unresolved: suggestion.unresolved };
+  return {
+    ok: true, applied: changes.length, unresolved: suggestion.unresolved,
+    notified: notifyChanges(data, env, changes)
+  };
 }
 
 function actAddPlan(req, env, data) {
@@ -153,6 +163,15 @@ function actLog(req, env) {
 
 // ---------------------------------------------------------------------------
 
+/** Sends phone notifications for saved changes; returns what was sent. */
+function notifyChanges(data, env, changes) {
+  if (!changes.length || !env.notify) return [];
+  var list = rideNotifications(data, changes.map(function (c) {
+    return { item: c.item, before: c.was, after: c.now };
+  }), env.now.date);
+  return list.length ? env.notify(list, data) || [] : [];
+}
+
 function requireMember(data, by) {
   var p = personById(data, id(by));
   if (!isMember(data, p)) throw new Error('Pick your name first.');
@@ -191,7 +210,11 @@ function writeChoice(data, env, by, item, driver, car) {
     before: describeChoice(data, item, item.driver, item.car),
     after: describeChoice(data, item, driver, car),
     late: late,
-    people: uniq([item.driver, driver].filter(Boolean))
+    people: uniq([item.driver, driver].filter(Boolean)),
+    // For phone notifications.
+    item: item,
+    was: { driver: item.driver, car: item.car },
+    now: { driver: item.kind === 'hold' ? item.person : driver, car: car }
   };
   env.store.upsertAssignment({
     key: item.key,

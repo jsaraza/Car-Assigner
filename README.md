@@ -8,6 +8,9 @@ A free planner for a family that shares three cars. It answers "who's driving wh
   bus-lot days).
 - **Planner role:** one person (set in the Sheet; Dad by default) assigns drivers and cars. Everyone
   else sees the plan and adds their own busy times, bus-lot days and pickup requests.
+- **Phone notifications:** when a ride is assigned, the driver gets "You're driving Brothers to school
+  tomorrow…" and the rider gets "Jim is dropping you off at school…". This uses the free ntfy app.
+  Grandparents can be added as helpers who drive their own car.
 - **Rules:** who can drive which car, nobody in two places at once, no car double-booked, nobody
   assigned during their busy time. Preferences: the EV goes to the longest commute, and driving is
   spread around.
@@ -41,7 +44,7 @@ No personal information is in this repo. Names, emails and schedules only live i
 
 | Path | What |
 |---|---|
-| `apps-script/Util.js, Schema.js, Planner.js, Sample.js, Actions.js` | Shared logic: plain functions that run in Apps Script, in the browser (demo mode) and in Node (tests) |
+| `apps-script/Util.js, Schema.js, Planner.js, Notify.js, Sample.js, Actions.js` | Shared logic: plain functions that run in Apps Script, in the browser (demo mode) and in Node (tests) |
 | `apps-script/Store.js, Api.js, Jobs.js, Setup.js` | Apps Script only: Sheet storage, the web endpoint, timed jobs, calendar and email, setup |
 | `web/` | The phone app (no build step, no dependencies) |
 | `tests/` | `node --test`, including the backend run against fake Google services |

@@ -44,6 +44,7 @@ function sampleTables(today) {
       { key: 'bus_lot_place', value: 'bus_lot', notes: 'Places id of the bus parking lot.' },
       { key: 'ev_to_longest_commute', value: 'TRUE', notes: 'Prefer giving the EV to whoever drives furthest.' },
       { key: 'calendar_id', value: '', notes: 'Filled in by setup().' },
+      { key: 'notify_server', value: 'https://ntfy.sh', notes: 'Where phone notifications are sent (free ntfy app).' },
       { key: 'api_url', value: '', notes: 'Paste the web app URL from Deploy > Manage deployments.' },
       { key: 'app_url', value: '', notes: 'The GitHub Pages address of the app.' }
     ],
@@ -57,12 +58,16 @@ function sampleTables(today) {
       { id: 'sister', name: 'Sister', phone: 'iphone', email: '', can_drive: 'ev, lexus', drives_self_to_work: 'TRUE',
         gets_rides_to_work: 'FALSE', work_place: '', commute_minutes: '20', active: 'TRUE' },
       { id: 'brothers', name: 'Brothers', phone: '', email: '', can_drive: '', drives_self_to_work: 'FALSE',
-        gets_rides_to_work: 'FALSE', work_place: '', commute_minutes: '', active: 'TRUE' }
+        gets_rides_to_work: 'FALSE', work_place: '', commute_minutes: '', active: 'TRUE' },
+      { id: 'grandparents', name: 'Mama and Papa', phone: '', email: '', can_drive: 'grandparents_car',
+        drives_self_to_work: 'FALSE', gets_rides_to_work: 'FALSE', work_place: '', commute_minutes: '',
+        helper: 'TRUE', active: 'TRUE' }
     ],
     cars: [
       { id: 'ev', name: 'EV', is_ev: 'TRUE', bluetooth_name: '' },
       { id: 'lexus', name: 'Lexus', is_ev: 'FALSE', bluetooth_name: '' },
-      { id: 'pathfinder', name: 'Pathfinder', is_ev: 'FALSE', bluetooth_name: '' }
+      { id: 'pathfinder', name: 'Pathfinder', is_ev: 'FALSE', bluetooth_name: '' },
+      { id: 'grandparents_car', name: "Mama and Papa's car", is_ev: 'FALSE', bluetooth_name: '' }
     ],
     places: [
       { id: 'home', name: 'Home', minutes_from_home: '0' },

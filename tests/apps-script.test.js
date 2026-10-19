@@ -155,3 +155,45 @@ test('familyLink builds the link from the settings', () => {
   assert.equal(link, 'https://someone.github.io/Car-Assigner/?api=' +
     encodeURIComponent('https://script.google.com/macros/s/abc/exec') + '&key=' + google.key);
 });
+
+test('setup gives everyone a private notification channel; saving a ride pushes to the right phones', () => {
+  const google = ready();
+  const people = google.sheet('People').rows;
+  const col = people[0].indexOf('notify_topic');
+  const topics = people.slice(1).map((r) => r[col]);
+  assert.ok(topics.every((t) => /^familycars-[0-9a-f]{16}$/.test(t)), topics.join(','));
+  assert.equal(new Set(topics).size, topics.length, 'every topic is different');
+  const topicOf = (pid) => people.find((r) => r[0] === pid)[col];
+
+  // Running setup again keeps the same channels.
+  google.g.setup();
+  assert.equal(topicOf('me'), topics[0]);
+
+  const res = google.call({ action: 'assign', by: 'dad', itemKey: `${TUE}:school_pm:brothers`, driver: 'grandparents', car: 'grandparents_car' });
+  assert.equal(res.ok, true, res.error);
+  assert.deepEqual(res.notified.map((n) => n.person), ['grandparents', 'brothers']);
+  assert.equal(google.fetched.length, 2);
+  assert.equal(google.fetched[0].url, 'https://ntfy.sh/');
+  const toBrothers = google.fetched.find((f) => f.body.topic === topicOf('brothers'));
+  assert.equal(toBrothers.body.message, 'Mama and Papa are picking you up from school tomorrow at 3:05pm.');
+  assert.equal(toBrothers.body.title, 'Family Cars');
+});
+
+test('only you (or the planner) can see your notification channel', () => {
+  const google = ready();
+  const asMe = google.call({ action: 'state', by: 'me', days: 1 });
+  assert.ok(asMe.people.find((p) => p.id === 'me').notifyTopic);
+  assert.equal(asMe.people.find((p) => p.id === 'brothers').notifyTopic, undefined);
+  const asDad = google.call({ action: 'state', by: 'dad', days: 1 });
+  assert.ok(asDad.people.find((p) => p.id === 'brothers').notifyTopic);
+});
+
+test('setup adds new columns to a sheet made by an older version', () => {
+  const google = ready();
+  const people = google.sheet('People').rows;
+  const col = people[0].indexOf('helper');
+  people.forEach((r) => r.splice(col, 2)); // remove helper + notify_topic
+  google.g.setup();
+  assert.ok(google.sheet('People').rows[0].includes('helper'));
+  assert.ok(google.sheet('People').rows[0].includes('notify_topic'));
+});
